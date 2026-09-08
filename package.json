@@ -1,6 +1,9 @@
 {
   "name": "cuida-a-any",
   "version": "1.0.0",
+  "description": "Mascota virtual PWA: Cuida a Any (Phaser 3 + JavaScript vanilla).",
+  "license": "MIT",
+  "author": "Kael",
   "main": "sw.js",
   "scripts": {
     "test": "npm run build && node tests/kitchen.test.mjs && node tests/decay.test.mjs && node tests/menu.test.mjs && node tests/features.test.mjs",
@@ -9,10 +12,13 @@
     "preview": "node node_modules/vite/bin/vite.js preview",
     "deploy": "npm run build && bash deploy.sh"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "phaser",
+    "pwa",
+    "mascota-virtual",
+    "game",
+    "vite"
+  ],
   "type": "module",
   "dependencies": {
     "phaser": "^3.60.0"
