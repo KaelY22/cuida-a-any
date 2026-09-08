@@ -1,0 +1,24 @@
+{
+  "name": "cuida-a-any",
+  "version": "1.0.0",
+  "main": "sw.js",
+  "scripts": {
+    "test": "npm run build && node tests/kitchen.test.mjs && node tests/decay.test.mjs && node tests/menu.test.mjs && node tests/features.test.mjs",
+    "build": "node node_modules/vite/bin/vite.js build && node scripts/gen-sw.mjs",
+    "dev": "node node_modules/vite/bin/vite.js",
+    "preview": "node node_modules/vite/bin/vite.js preview",
+    "deploy": "npm run build && bash deploy.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "phaser": "^3.60.0"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.62.1",
+    "vite": "^8.2.1"
+  }
+}
