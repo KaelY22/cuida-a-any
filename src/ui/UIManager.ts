@@ -1,33 +1,85 @@
-import { GameState, currentFoodIndex, forceSave, setCurrentFoodIndex, resetGameState } from '../gameState.js';
-import { FOOD_DATABASE, CATEGORIES } from '../constants.js';
-import { updateUIBars } from '../utils.js';
-import { checkAchievements, buildAchievementsList } from '../achievements.js';
-import { askTutorial } from '../tutorial.js';
-import { OUTFITS } from '../scenes/SalonScene.js';
+import { GameState, currentFoodIndex, forceSave, setCurrentFoodIndex, resetGameState } from '../gameState';
+import { FOOD_DATABASE, CATEGORIES } from '../constants';
+import type { Food, Category } from '../constants';
+import { updateUIBars } from '../utils';
+import { checkAchievements, buildAchievementsList } from '../achievements';
+import { askTutorial } from '../tutorial';
+import { OUTFITS } from '../scenes/SalonScene';
+import type { SalonScene } from '../scenes/SalonScene';
+import type { KitchenScene } from '../scenes/KitchenScene';
 
-let earlyPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
+interface BeforeInstallPromptEvent extends Event {
+    prompt(): Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
+interface SettingsAction {
+    id: string;
+    icon: string;
+    title: string;
+    sub: string;
+    kind: 'normal' | 'install' | 'danger';
+}
+
+interface ActionEl {
+    row: HTMLButtonElement;
+    ctrl: Element | null;
+    def: SettingsAction;
+}
+
+type StatKey = 'hunger' | 'thirst' | 'sleep' | 'health';
+
+interface StatDef {
+    key: StatKey;
+    icon: string;
+    name: string;
+    cls: string;
+}
+
+interface StatEl {
+    value: HTMLElement;
+    fill: HTMLElement;
+    label: HTMLElement;
+}
+
+let earlyPrompt: BeforeInstallPromptEvent | null = null;
+window.addEventListener('beforeinstallprompt', (e: Event) => {
     e.preventDefault();
-    earlyPrompt = e;
+    earlyPrompt = e as BeforeInstallPromptEvent;
 });
 
 export class UIManager {
+    modalSettings: HTMLElement;
+    modalFridge: HTMLElement;
+    modalStats: HTMLElement;
+    foodGrid: HTMLElement;
+    deferredPrompt: BeforeInstallPromptEvent | null;
+    isStandalone: boolean;
+    isIOS: boolean;
+    settingsActions!: SettingsAction[];
+    actionEls!: Record<string, ActionEl>;
+    iosPanel!: HTMLDivElement;
+    statsList!: StatDef[];
+    statEls!: Record<string, StatEl>;
+    selectedCat!: string;
+    catChips!: Record<string, HTMLButtonElement>;
+
     constructor() {
-        this.modalSettings = document.getElementById('settings-modal');
-        this.modalFridge = document.getElementById('fridge-modal');
-        this.modalStats = document.getElementById('stats-modal');
-        this.foodGrid = document.getElementById('food-grid');
+        this.modalSettings = document.getElementById('settings-modal')!;
+        this.modalFridge = document.getElementById('fridge-modal')!;
+        this.modalStats = document.getElementById('stats-modal')!;
+        this.foodGrid = document.getElementById('food-grid')!;
         this.deferredPrompt = earlyPrompt;
         earlyPrompt = null;
         this.isStandalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
         this.isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        document.getElementById('btn-settings').addEventListener('click', () => this.openSettings());
-        document.getElementById('settings-close').addEventListener('click', () => this.closeSettings());
-        document.getElementById('fridge-close').addEventListener('click', () => this.closeFridge());
-        document.getElementById('stats-close').addEventListener('click', () => this.closeStats());
-        document.getElementById('achievements-close').addEventListener('click', () => this.closeAchievements());
-        document.getElementById('outfit-close').addEventListener('click', () => this.closeOutfits());
+        document.getElementById('btn-settings')!.addEventListener('click', () => this.openSettings());
+        document.getElementById('settings-close')!.addEventListener('click', () => this.closeSettings());
+        document.getElementById('fridge-close')!.addEventListener('click', () => this.closeFridge());
+        document.getElementById('stats-close')!.addEventListener('click', () => this.closeStats());
+        document.getElementById('achievements-close')!.addEventListener('click', () => this.closeAchievements());
+        document.getElementById('outfit-close')!.addEventListener('click', () => this.closeOutfits());
         document.querySelectorAll('.status-pill').forEach((sq) => {
             sq.addEventListener('click', () => this.openStats());
         });
@@ -50,7 +102,7 @@ export class UIManager {
         }, 500);
     }
 
-    buildSettings() {
+    buildSettings(): void {
         this.settingsActions = [
             {
                 id: 'achievements',
@@ -81,7 +133,7 @@ export class UIManager {
                 kind: 'danger'
             }
         ];
-        const container = document.getElementById('settings-actions');
+        const container = document.getElementById('settings-actions')!;
         this.actionEls = {};
         this.settingsActions.forEach((action) => {
             const row = document.createElement('button');
@@ -107,7 +159,7 @@ export class UIManager {
         container.insertBefore(this.iosPanel, this.actionEls.reset.row);
     }
 
-    handleAction(id) {
+    handleAction(id: string): void {
         const action = this.settingsActions.find(a => a.id === id);
         if (!action) return;
         if (action.kind === 'install') {
@@ -122,46 +174,48 @@ export class UIManager {
         }
     }
 
-    initInstall() {
-        window.addEventListener('beforeinstallprompt', (e) => {
+    initInstall(): void {
+        window.addEventListener('beforeinstallprompt', (e: Event) => {
             e.preventDefault();
-            this.deferredPrompt = e;
+            this.deferredPrompt = e as BeforeInstallPromptEvent;
             this.updateInstallUI();
         });
-        window.addEventListener('appinstalled', () => {            this.deferredPrompt = null;
+        window.addEventListener('appinstalled', () => {
+            this.deferredPrompt = null;
             this.isStandalone = true;
             this.updateInstallUI();
         });
         this.updateInstallUI();
     }
 
-    updateInstallUI() {
+    updateInstallUI(): void {
         const el = this.actionEls.install;
         if (!el) return;
         const { row, ctrl, def } = el;
-        const sub = row.querySelector('.settings-row-sub');
-        ctrl.innerHTML = '';
+        const sub = row.querySelector('.settings-row-sub')!;
+        ctrl!.innerHTML = '';
         row.classList.remove('installed');
         if (this.isStandalone) {
             row.classList.add('installed');
             sub.textContent = 'Ya tienes el juego en tu dispositivo';
-            ctrl.innerHTML = '<span class="install-badge">Instalado</span>';
+            ctrl!.innerHTML = '<span class="install-badge">Instalado</span>';
         } else if (this.deferredPrompt) {
             sub.textContent = def.sub;
-            ctrl.innerHTML = '<span class="install-btn">Instalar</span>';
+            ctrl!.innerHTML = '<span class="install-btn">Instalar</span>';
         } else if (this.isIOS) {
             sub.textContent = 'Disponible desde Safari';
-            ctrl.innerHTML = '<span class="install-btn">Cómo instalarlo</span>';
+            ctrl!.innerHTML = '<span class="install-btn">Cómo instalarlo</span>';
         } else {
             row.classList.add('installed');
             sub.textContent = 'Tu navegador no lo permite';
         }
     }
 
-    async onInstallClick() {
-        if (this.deferredPrompt) {
-            this.deferredPrompt.prompt();
-            const { outcome } = await this.deferredPrompt.userChoice;
+    async onInstallClick(): Promise<void> {
+        const prompt = this.deferredPrompt;
+        if (prompt) {
+            prompt.prompt();
+            const { outcome } = await prompt.userChoice;
             this.deferredPrompt = null;
             if (outcome === 'accepted') {
                 this.isStandalone = true;
@@ -172,50 +226,50 @@ export class UIManager {
         }
     }
 
-    openSettings() {
+    openSettings(): void {
         this.modalSettings.classList.remove('hidden');
         this.setModalOpen(true);
     }
 
-    closeSettings() {
+    closeSettings(): void {
         this.modalSettings.classList.add('hidden');
         this.setModalOpen(false);
     }
 
-    setModalOpen(open) {
+    setModalOpen(open: boolean): void {
         const input = window.game?.input;
         if (input) input.enabled = !open;
     }
 
-    closeAllModals() {
+    closeAllModals(): void {
         this.modalSettings.classList.add('hidden');
         this.modalFridge.classList.add('hidden');
         this.modalStats.classList.add('hidden');
-        document.getElementById('achievements-modal').classList.add('hidden');
+        document.getElementById('achievements-modal')!.classList.add('hidden');
         const outfitModal = document.getElementById('outfit-modal');
         if (outfitModal) outfitModal.classList.add('hidden');
         this.setModalOpen(false);
     }
 
-    openFridge() {
+    openFridge(): void {
         this.populateFoodGrid();
         this.modalFridge.classList.remove('hidden');
         this.setModalOpen(true);
     }
 
-    closeFridge() {
+    closeFridge(): void {
         this.modalFridge.classList.add('hidden');
         this.setModalOpen(false);
     }
 
-    buildStats() {
+    buildStats(): void {
         this.statsList = [
             { key: 'hunger', icon: 'lunch_dining', name: 'Hambre', cls: 'hunger' },
             { key: 'thirst', icon: 'water_drop', name: 'Sed', cls: 'thirst' },
             { key: 'sleep', icon: 'bedtime', name: 'Sueño', cls: 'sleep' },
             { key: 'health', icon: 'favorite', name: 'Salud', cls: 'health' }
         ];
-        const container = document.getElementById('stats-list');
+        const container = document.getElementById('stats-list')!;
         this.statEls = {};
         this.statsList.forEach((stat) => {
             const row = document.createElement('div');
@@ -232,21 +286,21 @@ export class UIManager {
                 </div>`;
             container.appendChild(row);
             this.statEls[stat.key] = {
-                value: row.querySelector('.stat-row-value'),
-                fill: row.querySelector('.stat-row-fill'),
-                label: row.querySelector('.stat-row-label')
+                value: row.querySelector('.stat-row-value') as HTMLElement,
+                fill: row.querySelector('.stat-row-fill') as HTMLElement,
+                label: row.querySelector('.stat-row-label') as HTMLElement
             };
         });
     }
 
-    statLabelFor(v) {
+    statLabelFor(v: number): { text: string; cls: string } {
         if (v >= 75) return { text: 'Llena', cls: 'ok' };
         if (v >= 45) return { text: 'OK', cls: 'mid' };
         if (v >= 25) return { text: 'Baja', cls: 'low' };
         return { text: 'Crítica', cls: 'crit' };
     }
 
-    refreshStats() {
+    refreshStats(): void {
         this.statsList.forEach((stat) => {
             const value = Math.round(GameState[stat.key]);
             const el = this.statEls[stat.key];
@@ -258,40 +312,40 @@ export class UIManager {
         });
     }
 
-    openStats() {
+    openStats(): void {
         this.refreshStats();
         this.modalStats.classList.remove('hidden');
         this.setModalOpen(true);
     }
 
-    closeStats() {
+    closeStats(): void {
         this.modalStats.classList.add('hidden');
         this.setModalOpen(false);
     }
 
-    openAchievements() {
+    openAchievements(): void {
         buildAchievementsList();
-        document.getElementById('achievements-modal').classList.remove('hidden');
+        document.getElementById('achievements-modal')!.classList.remove('hidden');
         this.setModalOpen(true);
     }
 
-    closeAchievements() {
-        document.getElementById('achievements-modal').classList.add('hidden');
+    closeAchievements(): void {
+        document.getElementById('achievements-modal')!.classList.add('hidden');
         this.setModalOpen(false);
     }
 
-    openOutfits() {
+    openOutfits(): void {
         this.buildOutfits();
-        document.getElementById('outfit-modal').classList.remove('hidden');
+        document.getElementById('outfit-modal')!.classList.remove('hidden');
         this.setModalOpen(true);
     }
 
-    closeOutfits() {
-        document.getElementById('outfit-modal').classList.add('hidden');
+    closeOutfits(): void {
+        document.getElementById('outfit-modal')!.classList.add('hidden');
         this.setModalOpen(false);
     }
 
-    buildOutfits() {
+    buildOutfits(): void {
         const grid = document.getElementById('outfits-grid');
         if (!grid) return;
         grid.innerHTML = '';
@@ -308,7 +362,7 @@ export class UIManager {
                 forceSave();
                 const active = window.game?.scene?.getScenes(true)[0];
                 if (active && active.scene.key === 'SalonScene') {
-                    active.applyOutfit(outfit.id);
+                    (active as SalonScene).applyOutfit(outfit.id);
                 }
                 this.closeOutfits();
             });
@@ -316,10 +370,10 @@ export class UIManager {
         });
     }
 
-    populateFoodGrid() {
+    populateFoodGrid(): void {
         this.foodGrid.innerHTML = '';
         const foods = this.selectedCat === 'all' ? FOOD_DATABASE : FOOD_DATABASE.filter((f) => f.cat === this.selectedCat);
-        const byCat = {};
+        const byCat: Record<string, Food[]> = {};
         foods.forEach((food) => {
             if (!byCat[food.cat]) byCat[food.cat] = [];
             byCat[food.cat].push(food);
@@ -334,7 +388,7 @@ export class UIManager {
                 <span class="fridge-current-badge">Servido</span>`;
         }
 
-        const catInfo = {};
+        const catInfo: Record<string, Category> = {};
         CATEGORIES.forEach((c) => { catInfo[c.id] = c; });
         const catIds = Object.keys(byCat);
 
@@ -369,7 +423,7 @@ export class UIManager {
                     setCurrentFoodIndex(index);
                     const activeScene = window.game?.scene?.getScenes(true)[0];
                     if (activeScene && activeScene.scene.key === 'KitchenScene') {
-                        activeScene.updateFoodSprite();
+                        (activeScene as KitchenScene).updateFoodSprite();
                     }
                     this.closeFridge();
                 });
@@ -380,10 +434,10 @@ export class UIManager {
         });
     }
 
-    buildCategories() {
+    buildCategories(): void {
         this.selectedCat = 'all';
-        const bar = document.getElementById('cat-bar');
-        const chips = [{ id: 'all', icon: 'restaurant', name: 'Todas' }, ...CATEGORIES];
+        const bar = document.getElementById('cat-bar')!;
+        const chips: Category[] = [{ id: 'all', icon: 'restaurant', name: 'Todas' }, ...CATEGORIES];
         this.catChips = {};
         chips.forEach((cat) => {
             const chip = document.createElement('button');
@@ -401,7 +455,7 @@ export class UIManager {
         });
     }
 
-    async resetProgress() {
+    async resetProgress(): Promise<void> {
         if (!confirm('¿Borrar todo? Se perderán logros, ropa, tutorial y progreso. Se limpiará la caché del juego.')) return;
         this.closeAllModals();
         window.__suppressSave = true;

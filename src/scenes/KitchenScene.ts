@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
-import { GameState, currentFoodIndex, setCurrentFoodIndex, throttledSave, updateStats } from '../gameState.js';
-import { FOOD_DATABASE, ANY_FRAMES } from '../constants.js';
-import { updateUIBars, updateAnyExpression, resetFrameCache, isNightTime, canEatFood, fitCamera } from '../utils.js';
-import { bumpCounter } from '../achievements.js';
+import { GameState, currentFoodIndex, setCurrentFoodIndex, throttledSave, updateStats } from '../gameState';
+import { FOOD_DATABASE, ANY_FRAMES } from '../constants';
+import type { Food } from '../constants';
+import { updateUIBars, updateAnyExpression, resetFrameCache, isNightTime, canEatFood, fitCamera } from '../utils';
+import { bumpCounter } from '../achievements';
 
 const WORLD_W = 2560;
 const WORLD_H = 1440;
@@ -13,21 +14,26 @@ const LAYOUT = {
     fridge: { x: 1030, y: 1080, h: 520 },
 };
 
+interface FoodSprite extends Phaser.GameObjects.Sprite {
+    foodRef: Food;
+}
+
 export class KitchenScene extends Phaser.Scene {
+    any: Phaser.GameObjects.Sprite | null = null;
+    food!: FoodSprite;
+    fridge!: Phaser.GameObjects.Sprite;
+    decayAccumulator = 0;
+    bg!: Phaser.GameObjects.Image;
+    foodY = 0;
+    isDragging = false;
+    nearMouth = false;
+    mouthBox: Phaser.Geom.Rectangle | null = null;
+
     constructor() {
         super('KitchenScene');
-        this.any = null;
-        this.food = null;
-        this.fridge = null;
-        this.decayAccumulator = 0;
-        this.bg = null;
-        this.foodY = 0;
-        this.isDragging = false;
-        this.nearMouth = false;
-        this.mouthBox = null;
     }
 
-    create() {
+    create(): void {
         this.cameras.main.fadeIn(250);
         fitCamera(this);
 
@@ -49,9 +55,9 @@ export class KitchenScene extends Phaser.Scene {
         GameState.currentScene = 'KitchenScene';
     }
 
-    createAny() {
+    createAny(): void {
         if (this.any) this.any.destroy();
-        let startFrame = ANY_FRAMES.NORMAL;
+        let startFrame: number = ANY_FRAMES.NORMAL;
         if (GameState.health < 15) startFrame = ANY_FRAMES.ENFERMA_2;
         else if (GameState.health < 30) startFrame = ANY_FRAMES.ENFERMA_1;
         else if (GameState.sleep <= 25) startFrame = ANY_FRAMES.TIRED;
@@ -72,22 +78,20 @@ export class KitchenScene extends Phaser.Scene {
         );
     }
 
-    createPlateAndFood() {
+    createPlateAndFood(): void {
         const foodKey = FOOD_DATABASE[currentFoodIndex].id;
         this.foodY = LAYOUT.foodY;
-        this.food = this.add.sprite(LAYOUT.any.x, this.foodY, foodKey);
+        this.food = this.add.sprite(LAYOUT.any.x, this.foodY, foodKey) as FoodSprite;
         this.food.setScale(LAYOUT.foodH / 200);
         this.food.setDepth(1);
         this.food.foodRef = FOOD_DATABASE[currentFoodIndex];
 
-        // Habilitar interacción y arrastre
         this.food.setInteractive({
             draggable: true,
             cursor: 'grab'
         });
 
-        // Cuando empieza el arrastre
-        this.food.on('dragstart', (pointer, dragX, dragY) => {
+        this.food.on('dragstart', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
             if (GameState.isEating || GameState.isSleeping || !(window.tutorialDragOK?.() ?? true)) {
                 return;
             }
@@ -95,28 +99,25 @@ export class KitchenScene extends Phaser.Scene {
             window.isDraggingFood = true;
             this.food.setDepth(10);
             this.food.setScale(LAYOUT.foodH / 200 * 1.2);
-            // Cambiar cursor
-            this.food.input.cursor = 'grabbing';
+            this.food.input!.cursor = 'grabbing';
         });
 
-        // Durante el arrastre
-        this.food.on('drag', (pointer, dragX, dragY) => {
+        this.food.on('drag', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
             if (!this.isDragging) return;
             this.food.x = dragX;
             this.food.y = dragY;
             const over = this.any && !GameState.isSleeping && this.mouthBox && Phaser.Geom.Rectangle.Contains(this.mouthBox, pointer.worldX, pointer.worldY) && canEatFood(this.food.foodRef);
             if (over !== this.nearMouth) {
-                this.nearMouth = over;
+                this.nearMouth = !!over;
                 if (over) {
-                    this.any.setFrame(ANY_FRAMES.BOCA_ABIERTA);
+                    this.any!.setFrame(ANY_FRAMES.BOCA_ABIERTA);
                 } else {
                     this.updateAnyFrameFromState();
                 }
             }
         });
 
-        // Cuando termina el arrastre (SIEMPRE se dispara)
-        this.food.on('dragend', (pointer, dragX, dragY) => {
+        this.food.on('dragend', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
             if (!this.isDragging) {
                 return;
             }
@@ -126,7 +127,7 @@ export class KitchenScene extends Phaser.Scene {
             this.nearMouth = false;
             this.food.setDepth(1);
             this.food.setScale(LAYOUT.foodH / 200);
-            this.food.input.cursor = 'grab';
+            this.food.input!.cursor = 'grab';
 
             if (wasNearMouth && this.any && !GameState.isSleeping) {
                 window.__feedAttempted = true;
@@ -139,7 +140,7 @@ export class KitchenScene extends Phaser.Scene {
         });
     }
 
-    createFridge() {
+    createFridge(): void {
         this.fridge = this.add.sprite(LAYOUT.fridge.x, LAYOUT.fridge.y, 'ui_fridge');
         const scale = LAYOUT.fridge.h / this.fridge.height;
         this.fridge.setScale(scale);
@@ -151,7 +152,7 @@ export class KitchenScene extends Phaser.Scene {
         });
     }
 
-    updateFoodSprite() {
+    updateFoodSprite(): void {
         const newKey = FOOD_DATABASE[currentFoodIndex].id;
         this.food.setTexture(newKey);
         this.food.foodRef = FOOD_DATABASE[currentFoodIndex];
@@ -163,20 +164,18 @@ export class KitchenScene extends Phaser.Scene {
         });
     }
 
-    updateAnyFrameFromState() {
+    updateAnyFrameFromState(): void {
         if (!this.any) return;
         resetFrameCache();
-        let targetFrame = ANY_FRAMES.NORMAL;
+        let targetFrame: number = ANY_FRAMES.NORMAL;
         if (GameState.health < 15) targetFrame = ANY_FRAMES.ENFERMA_2;
         else if (GameState.health < 30) targetFrame = ANY_FRAMES.ENFERMA_1;
         else if (GameState.sleep <= 25) targetFrame = ANY_FRAMES.TIRED;
         else if (GameState.hunger < 20 || GameState.thirst < 20) targetFrame = ANY_FRAMES.MOLESTA;
-        if (this.any.frame.name !== targetFrame) {
-            this.any.setFrame(targetFrame);
-        }
+        this.any.setFrame(targetFrame);
     }
 
-    returnFoodToPlate() {
+    returnFoodToPlate(): void {
         this.tweens.add({
             targets: this.food,
             x: LAYOUT.any.x,
@@ -190,8 +189,7 @@ export class KitchenScene extends Phaser.Scene {
         });
     }
 
-    // ===== COMER =====
-    startEating(foodSprite) {
+    startEating(foodSprite: FoodSprite): void {
         if (GameState.isEating) return;
         const ref = foodSprite.foodRef;
         const isVerySick = (GameState.health < 15);
@@ -209,7 +207,7 @@ export class KitchenScene extends Phaser.Scene {
         }
     }
 
-    startNormalEating(foodSprite) {
+    startNormalEating(foodSprite: FoodSprite): void {
         GameState.isEating = true;
         foodSprite.disableInteractive();
         foodSprite.setVisible(false);
@@ -225,7 +223,7 @@ export class KitchenScene extends Phaser.Scene {
         this.time.delayedCall(2600, () => this.finishEating(foodSprite, true));
     }
 
-    startLicking(foodSprite) {
+    startLicking(foodSprite: FoodSprite): void {
         GameState.isEating = true;
         foodSprite.disableInteractive();
         const originalX = foodSprite.x;
@@ -267,7 +265,7 @@ export class KitchenScene extends Phaser.Scene {
         });
     }
 
-    finishEating(foodSprite, makeVisible) {
+    finishEating(foodSprite: FoodSprite, makeVisible: boolean): void {
         const ref = foodSprite.foodRef;
         GameState.hunger = Phaser.Math.Clamp(GameState.hunger + Phaser.Math.Between(ref.h[0], ref.h[1]), 0, 100);
         GameState.thirst = Phaser.Math.Clamp(GameState.thirst + Phaser.Math.Between(ref.t[0], ref.t[1]), 0, 100);
@@ -295,7 +293,7 @@ export class KitchenScene extends Phaser.Scene {
         bumpCounter('feedCount');
     }
 
-    update(time, delta) {
+    update(time: number, delta: number): void {
         let dt = Math.min(delta / 1000, 0.1);
         this.decayAccumulator += dt;
         if (this.decayAccumulator >= 1.0) {
@@ -310,3 +308,4 @@ export class KitchenScene extends Phaser.Scene {
         }
     }
 }
+

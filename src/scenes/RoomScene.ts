@@ -1,26 +1,31 @@
 import Phaser from 'phaser';
-import { GameState, throttledSave, updateStats } from '../gameState.js';
-import { ANY_FRAMES } from '../constants.js';
-import { updateUIBars, updateAnyExpression, resetFrameCache, isNightTime, fitCamera } from '../utils.js';
-import { bumpCounter } from '../achievements.js';
+import { GameState, throttledSave, updateStats } from '../gameState';
+import { ANY_FRAMES } from '../constants';
+import { updateUIBars, updateAnyExpression, resetFrameCache, isNightTime, fitCamera } from '../utils';
+import { bumpCounter } from '../achievements';
 
-const LAYOUT = {
+const LAYOUT: {
+    anyAwake: { x: number; y: number; h: number };
+    anySleep: { x: number; y: number; h: number };
+    lamp: { x: number; y: number; h: number };
+} = {
     anyAwake: { x: 1380, y: 1080, h: 518 },
     anySleep: { x: 1560, y: 980, h: 403 },
     lamp: { x: 1000, y: 1120, h: 144 },
 };
 
 export class RoomScene extends Phaser.Scene {
+    bg!: Phaser.GameObjects.Image;
+    any: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | null = null;
+    lamp!: Phaser.GameObjects.Sprite;
+    decayAccumulator = 0;
+    isToggling = false;
+
     constructor() {
         super('RoomScene');
-        this.bg = null;
-        this.any = null;
-        this.lamp = null;
-        this.decayAccumulator = 0;
-        this.isToggling = false;
     }
 
-    create() {
+    create(): void {
         this.cameras.main.fadeIn(250);
         fitCamera(this);
 
@@ -36,7 +41,7 @@ export class RoomScene extends Phaser.Scene {
         GameState.currentScene = 'RoomScene';
     }
 
-    createAny() {
+    createAny(): void {
         if (this.any) this.any.destroy();
 
         if (GameState.isSleeping) {
@@ -45,7 +50,7 @@ export class RoomScene extends Phaser.Scene {
             this.any.setOrigin(0.5, 0.5);
             this.any.setScale(l.h / 450);
         } else {
-            let startFrame = ANY_FRAMES.NORMAL;
+            let startFrame: number = ANY_FRAMES.NORMAL;
             if (GameState.health < 15) startFrame = ANY_FRAMES.ENFERMA_2;
             else if (GameState.health < 30) startFrame = ANY_FRAMES.ENFERMA_1;
             else if (GameState.sleep <= 25) startFrame = ANY_FRAMES.TIRED;
@@ -59,7 +64,7 @@ export class RoomScene extends Phaser.Scene {
         this.any.setDepth(0);
     }
 
-    createLamp() {
+    createLamp(): void {
         if (this.lamp) this.lamp.destroy();
 
         const lampKey = GameState.isSleeping ? 'ui_light_on' : 'ui_light_off';
@@ -73,7 +78,7 @@ export class RoomScene extends Phaser.Scene {
         });
     }
 
-    toggleSleep() {
+    toggleSleep(): void {
         if (this.isToggling) return;
         this.isToggling = true;
 
@@ -96,7 +101,7 @@ export class RoomScene extends Phaser.Scene {
         });
     }
 
-    update(time, delta) {
+    update(time: number, delta: number): void {
         let dt = Math.min(delta / 1000, 0.1);
         this.decayAccumulator += dt;
         if (this.decayAccumulator >= 1.0) {

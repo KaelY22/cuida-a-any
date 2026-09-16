@@ -1,6 +1,16 @@
-import { GameState, forceSave } from './gameState.js';
+import { GameState, forceSave } from './gameState';
 
-export const ACHIEVEMENTS = [
+interface Achievement {
+    id: string;
+    icon: string;
+    title: string;
+    desc: string;
+    track?: string;
+    goal?: number;
+    state?: (g: GameState) => boolean;
+}
+
+export const ACHIEVEMENTS: Achievement[] = [
     { id: 'first_meal', icon: 'restaurant', title: 'Primer bocado', desc: 'Alimenta a Any por primera vez', track: 'feedCount', goal: 1 },
     { id: 'gourmet', icon: 'ramen_dining', title: 'Gourmet', desc: 'Alimenta a Any 20 veces', track: 'feedCount', goal: 20 },
     { id: 'chef', icon: 'soup_kitchen', title: 'Chef de lujo', desc: 'Alimenta a Any 100 veces', track: 'feedCount', goal: 100 },
@@ -15,25 +25,25 @@ export const ACHIEVEMENTS = [
     { id: 'friend', icon: 'volunteer_activism', title: 'Mejor amiga', desc: 'Juega 30 días', track: 'loginDays', goal: 30 }
 ];
 
-export function getProgress() {
+export function getProgress(): { unlocked: Record<string, boolean>; counters: Record<string, number> } {
     if (!GameState.achievements) GameState.achievements = { unlocked: {}, counters: {} };
     return GameState.achievements;
 }
 
-export function bumpCounter(key, amount = 1) {
+export function bumpCounter(key: string, amount = 1): void {
     const prog = getProgress();
     prog.counters[key] = (prog.counters[key] || 0) + amount;
     checkAchievements();
     forceSave();
 }
 
-export function checkAchievements() {
+export function checkAchievements(): void {
     const prog = getProgress();
     const counters = prog.counters;
     let changed = false;
     for (const a of ACHIEVEMENTS) {
         if (prog.unlocked[a.id]) continue;
-        const done = a.state ? a.state(GameState) : (counters[a.track] || 0) >= a.goal;
+        const done = a.state ? a.state(GameState) : (counters[a.track!] || 0) >= a.goal!;
         if (done) {
             prog.unlocked[a.id] = true;
             changed = true;
@@ -43,16 +53,16 @@ export function checkAchievements() {
     if (changed) forceSave();
 }
 
-let toastQueue = [];
+let toastQueue: Achievement[] = [];
 let toastShowing = false;
 
-function queueToast(achievement) {
+function queueToast(achievement: Achievement): void {
     toastQueue.push(achievement);
     if (!toastShowing) showNextToast();
 }
 
-function showNextToast() {
-    const el = document.getElementById('achievement-toast');
+function showNextToast(): void {
+    const el = document.getElementById('achievement-toast') as (HTMLElement & { _hideTimer?: number }) | null;
     const next = toastQueue.shift();
     if (!next || !el) {
         toastShowing = false;
@@ -62,8 +72,8 @@ function showNextToast() {
     try {
         window.game?.sound?.play('achievement_unlock');
     } catch (e) {}
-    el.querySelector('.ach-toast-icon .material-symbols-rounded').textContent = next.icon;
-    el.querySelector('.ach-toast-title').textContent = next.title;
+    el.querySelector('.ach-toast-icon .material-symbols-rounded')!.textContent = next.icon;
+    el.querySelector('.ach-toast-title')!.textContent = next.title;
     el.classList.remove('hidden');
     try { navigator.vibrate && navigator.vibrate(35); } catch (e) {}
     requestAnimationFrame(() => el.classList.add('show'));
@@ -77,7 +87,7 @@ function showNextToast() {
     }, 3800);
 }
 
-export function buildAchievementsList() {
+export function buildAchievementsList(): void {
     const prog = getProgress();
     const container = document.getElementById('achievements-list');
     if (!container) return;
@@ -88,7 +98,7 @@ export function buildAchievementsList() {
 
     ACHIEVEMENTS.forEach((a) => {
         const done = !!prog.unlocked[a.id];
-        const counter = prog.counters[a.track] || 0;
+        const counter = prog.counters[a.track!] || 0;
         const showProgress = a.track && !a.state;
         const row = document.createElement('div');
         row.className = 'ach-row' + (done ? ' done' : '');
@@ -97,7 +107,7 @@ export function buildAchievementsList() {
             <div class="ach-row-text">
                 <div class="ach-row-title">${a.title}</div>
                 <div class="ach-row-desc">${a.desc}</div>
-                ${showProgress ? `<div class="ach-row-progress">${Math.min(counter, a.goal)} / ${a.goal}</div>` : ''}
+                ${showProgress ? `<div class="ach-row-progress">${Math.min(counter, a.goal!)} / ${a.goal}</div>` : ''}
             </div>
             <div class="ach-row-badge"><span class="material-symbols-rounded">${done ? 'check' : 'lock'}</span></div>`;
         container.appendChild(row);

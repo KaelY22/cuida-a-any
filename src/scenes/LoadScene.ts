@@ -1,29 +1,29 @@
 import Phaser from 'phaser';
-import { FOOD_DATABASE } from '../constants.js';
-import { UIManager } from '../ui/UIManager.js';
+import { FOOD_DATABASE } from '../constants';
+import { UIManager } from '../ui/UIManager';
 
 export class LoadScene extends Phaser.Scene {
     constructor() {
         super('LoadScene');
     }
 
-    preload() {
+    preload(): void {
         const fill = document.getElementById('splash-fill');
         const sub = document.querySelector('.splash-sub');
-        this.load.on('progress', (v) => {
+        this.load.on('progress', (v: number) => {
             if (fill) fill.style.width = `${Math.floor(v * 100)}%`;
         });
         this.load.on('complete', () => {
             if (sub) sub.textContent = '¡Todo listo!';
             if (fill) fill.style.width = '100%';
             window.uiManager = new UIManager();
-            document.getElementById('ui-layer').classList.add('visible');
+            document.getElementById('ui-layer')!.classList.add('visible');
             const splash = document.getElementById('splash');
             if (splash) {
                 splash.classList.add('hidden');
                 setTimeout(() => splash.remove(), 600);
             }
-            import('../tutorial.js').then(({ startTutorialSystem }) => startTutorialSystem()).catch(() => {});
+            import('../tutorial').then(({ startTutorialSystem }) => startTutorialSystem()).catch(() => {});
         });
 
         this.load.spritesheet('any_base', 'assets/any_sprites/any_base.webp', { frameWidth: 450, frameHeight: 450 });
@@ -46,7 +46,7 @@ export class LoadScene extends Phaser.Scene {
         this.load.audio('achievement_unlock', 'assets/ui/achievement-unlock.mp3');
     }
 
-    create() {
+    create(): void {
         this.time.delayedCall(500, () => {
             this.cameras.main.fadeOut(250);
             this.cameras.main.once('camerafadeoutcomplete', () => {

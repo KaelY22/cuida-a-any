@@ -1,21 +1,38 @@
-import { GameState } from './gameState.js';
-import { ANY_FRAMES } from './constants.js';
+import { GameState } from './gameState';
+import { ANY_FRAMES } from './constants';
+import type Phaser from 'phaser';
+import type { Food } from './constants';
 
-let domCache = null;
-let lastStats = { hunger: -1, thirst: -1, sleep: -1, health: -1 };
+interface DOMCache {
+    hungerFill: HTMLElement;
+    thirstFill: HTMLElement;
+    sleepFill: HTMLElement;
+    healthFill: HTMLElement;
+    hungerNum: HTMLElement;
+    thirstNum: HTMLElement;
+    sleepNum: HTMLElement;
+    healthNum: HTMLElement;
+    hungerPill: Element | null;
+    thirstPill: Element | null;
+    sleepPill: Element | null;
+    healthPill: Element | null;
+}
+
+let domCache: DOMCache | null = null;
+const lastStats: { hunger: number; thirst: number; sleep: number; health: number } = { hunger: -1, thirst: -1, sleep: -1, health: -1 };
 let currentAnyFrame = -1;
 
-function getDOM() {
+function getDOM(): DOMCache {
     if (!domCache) {
         domCache = {
-            hungerFill: document.getElementById('fill-hunger'),
-            thirstFill: document.getElementById('fill-thirst'),
-            sleepFill: document.getElementById('fill-sleep'),
-            healthFill: document.getElementById('fill-health'),
-            hungerNum: document.getElementById('num-hunger'),
-            thirstNum: document.getElementById('num-thirst'),
-            sleepNum: document.getElementById('num-sleep'),
-            healthNum: document.getElementById('num-health'),
+            hungerFill: document.getElementById('fill-hunger')!,
+            thirstFill: document.getElementById('fill-thirst')!,
+            sleepFill: document.getElementById('fill-sleep')!,
+            healthFill: document.getElementById('fill-health')!,
+            hungerNum: document.getElementById('num-hunger')!,
+            thirstNum: document.getElementById('num-thirst')!,
+            sleepNum: document.getElementById('num-sleep')!,
+            healthNum: document.getElementById('num-health')!,
             hungerPill: document.querySelector('.status-pill[data-stat="hunger"]'),
             thirstPill: document.querySelector('.status-pill[data-stat="thirst"]'),
             sleepPill: document.querySelector('.status-pill[data-stat="sleep"]'),
@@ -25,13 +42,13 @@ function getDOM() {
     return domCache;
 }
 
-function updatePillState(pill, value) {
+function updatePillState(pill: Element | null, value: number): void {
     if (!pill) return;
     pill.classList.toggle('low', value < 25);
     pill.classList.toggle('mid', value >= 25 && value < 50);
 }
 
-export function updateUIBars() {
+export function updateUIBars(): void {
     const dom = getDOM();
     const h = Math.floor(GameState.hunger);
     const t = Math.floor(GameState.thirst);
@@ -64,10 +81,10 @@ export function updateUIBars() {
     }
 }
 
-export function updateAnyExpression(scene) {
+export function updateAnyExpression(scene: { any: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | null } | null): void {
     if (!scene || !scene.any) return;
 
-    let targetFrame;
+    let targetFrame: number;
     if (GameState.health < 15) targetFrame = ANY_FRAMES.ENFERMA_2;
     else if (GameState.health < 30) targetFrame = ANY_FRAMES.ENFERMA_1;
     else if (GameState.sleep <= 25) targetFrame = ANY_FRAMES.TIRED;
@@ -76,31 +93,28 @@ export function updateAnyExpression(scene) {
 
     if (targetFrame !== currentAnyFrame) {
         if (scene.any.texture.key === 'any_base' || scene.any.texture.key === 'any_casual') {
-            scene.any.setFrame(targetFrame);
+            (scene.any as Phaser.GameObjects.Sprite).setFrame(targetFrame);
         }
         currentAnyFrame = targetFrame;
     }
 }
 
-export function resetFrameCache() {
+export function resetFrameCache(): void {
     currentAnyFrame = -1;
 }
 
-// ===== NUEVA FUNCIÓN PARA DETECTAR NOCHE (hora México) =====
-export function isNightTime() {
+export function isNightTime(): boolean {
     const now = new Date();
-    // Obtener hora en zona horaria de México (CDMX)
     const formatter = new Intl.DateTimeFormat('es-MX', {
         timeZone: 'America/Mexico_City',
         hour: 'numeric',
         hour12: false
     });
     const hour = parseInt(formatter.format(now), 10);
-    // Noche: de 19:00 a 5:59
     return (hour >= 19 || hour < 6);
 }
 
-export function canEatFood(ref) {
+export function canEatFood(ref: Food): boolean {
     const hungerFull = ref.h[1] > 0 && GameState.hunger >= 99.5;
     const thirstFull = ref.t[1] > 0 && GameState.thirst >= 99.5;
     const healthFull = ref.health && ref.health[0] > 0 && GameState.health >= 99.5;
@@ -112,9 +126,9 @@ export function canEatFood(ref) {
 export const WORLD_W = 2560;
 export const WORLD_H = 1440;
 
-export function fitCamera(scene) {
+export function fitCamera(scene: Phaser.Scene): void {
     const cam = scene.cameras.main;
-    const apply = () => {
+    const apply = (): void => {
         cam.setZoom(Math.max(scene.scale.width / WORLD_W, scene.scale.height / WORLD_H));
         cam.centerOn(WORLD_W / 2, WORLD_H / 2);
     };
@@ -123,6 +137,6 @@ export function fitCamera(scene) {
     scene.events.once('shutdown', () => scene.scale.off('resize', apply));
 }
 
-export function releaseTextures(keys) {
+export function releaseTextures(keys: string[]): void {
     keys.forEach((k) => window.game?.textures?.remove(k));
 }

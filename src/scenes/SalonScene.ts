@@ -1,22 +1,23 @@
 import Phaser from 'phaser';
-import { GameState, forceSave, throttledSave, updateStats } from '../gameState.js';
-import { updateAnyExpression, resetFrameCache, isNightTime, updateUIBars, fitCamera } from '../utils.js';
-import { ANY_FRAMES } from '../constants.js';
+import { GameState, forceSave, throttledSave, updateStats } from '../gameState';
+import { updateAnyExpression, resetFrameCache, isNightTime, updateUIBars, fitCamera } from '../utils';
+import { ANY_FRAMES } from '../constants';
 
-export const OUTFITS = [
+export const OUTFITS: { id: string; name: string }[] = [
     { id: 'any_base', name: 'Clásico' },
     { id: 'any_casual', name: 'Casual' }
 ];
 
 export class SalonScene extends Phaser.Scene {
+    bg!: Phaser.GameObjects.Image;
+    any: Phaser.GameObjects.Sprite | null = null;
+    decayAccumulator = 0;
+
     constructor() {
         super('SalonScene');
-        this.bg = null;
-        this.any = null;
-        this.decayAccumulator = 0;
     }
 
-    create() {
+    create(): void {
         this.cameras.main.fadeIn(250);
         fitCamera(this);
 
@@ -35,10 +36,10 @@ export class SalonScene extends Phaser.Scene {
         GameState.currentScene = 'SalonScene';
     }
 
-    createAny() {
+    createAny(): void {
         if (this.any) this.any.destroy();
 
-        let startFrame = ANY_FRAMES.NORMAL;
+        let startFrame: number = ANY_FRAMES.NORMAL;
         if (GameState.health < 15) startFrame = ANY_FRAMES.ENFERMA_2;
         else if (GameState.health < 30) startFrame = ANY_FRAMES.ENFERMA_1;
         else if (GameState.sleep <= 25) startFrame = ANY_FRAMES.TIRED;
@@ -48,14 +49,13 @@ export class SalonScene extends Phaser.Scene {
         this.any.setOrigin(0.5, 0.5);
         this.any.setScale(518 / 450);
 
-        // Cambiar ropa al tocar a Any
         this.any.setInteractive({ cursor: 'pointer' });
         this.any.on('pointerdown', () => {
             window.uiManager?.openOutfits();
         });
     }
 
-    applyOutfit(id) {
+    applyOutfit(id: string): void {
         if (!this.any) return;
         GameState.outfit = id;
         this.any.setTexture(id);
@@ -64,7 +64,7 @@ export class SalonScene extends Phaser.Scene {
         forceSave();
     }
 
-    update(time, delta) {
+    update(time: number, delta: number): void {
         let dt = Math.min(delta / 1000, 0.1);
         this.decayAccumulator += dt;
         if (this.decayAccumulator >= 1.0) {

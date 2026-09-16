@@ -1,8 +1,19 @@
-import { GameState } from './gameState.js';
+import { GameState } from './gameState';
 
 const FLAG = 'any_tutorial_done';
 
-const STEPS = [
+interface TutorialStep {
+    id: string;
+    icon: string;
+    title: string;
+    text: string;
+    target?: string;
+    waitFor?: string;
+    goTo?: number;
+    last?: boolean;
+}
+
+const STEPS: TutorialStep[] = [
     {
         id: 'intro',
         icon: 'pets',
@@ -58,18 +69,23 @@ const STEPS = [
 ];
 
 let stepIndex = 0;
-let overlayEl, spotEl, cardEl, nextBtn, skipBtn, blockerEl;
+let overlayEl!: HTMLElement;
+let spotEl!: HTMLElement;
+let cardEl!: HTMLElement;
+let nextBtn!: HTMLButtonElement;
+let skipBtn!: HTMLButtonElement;
+let blockerEl!: HTMLElement;
 let tutorialActive = false;
-let pollTimer = null;
-const flags = {};
+let pollTimer: number | null = null;
+const flags: Record<string, boolean> = {};
 
 window.tutorialDragOK = () => !(tutorialActive && STEPS[stepIndex] && STEPS[stepIndex].id !== 'feed');
 
 let lastClipPath = '';
-function updateBlocker() {
+function updateBlocker(): void {
     if (!blockerEl || !tutorialActive) return;
-    const cr = document.getElementById('app-container').getBoundingClientRect();
-    let hole = null;
+    const cr = document.getElementById('app-container')!.getBoundingClientRect();
+    let hole: { x1: number; y1: number; x2: number; y2: number } | null = null;
     const modal = document.querySelector('.modal:not(.hidden)');
     if (modal) {
         const inner = modal.firstElementChild;
@@ -84,11 +100,9 @@ function updateBlocker() {
             const r = el.getBoundingClientRect();
             hole = { x1: r.left - cr.left - 12, y1: r.top - cr.top - 12, x2: r.right - cr.left + 12, y2: r.bottom - cr.top + 12 };
         } else {
-            const gc = document.getElementById('game-container');
-            if (gc) {
-                const r = gc.getBoundingClientRect();
-                hole = { x1: r.left - cr.left, y1: r.top - cr.top, x2: r.right - cr.left, y2: r.bottom - cr.top };
-            }
+            const gc = document.getElementById('game-container')!;
+            const r = gc.getBoundingClientRect();
+            hole = { x1: r.left - cr.left, y1: r.top - cr.top, x2: r.right - cr.left, y2: r.bottom - cr.top };
         }
     }
     let clip = '';
@@ -101,56 +115,57 @@ function updateBlocker() {
     }
 }
 
-function safeGet(key) {
+function safeGet(key: string): string | null {
     try { return localStorage.getItem(key); } catch (e) { return null; }
 }
 
-function safeSet(key, value) {
+function safeSet(key: string, value: string): void {
     try { localStorage.setItem(key, value); } catch (e) {}
 }
 
-export function maybeStartTutorial() {
+export function maybeStartTutorial(): void {
     document.addEventListener('click', (e) => {
         if (!tutorialActive) return;
-        if (e.target.closest('.status-pill')) flags.statsSeen = true;
-        if (e.target.closest('.dock-btn')) flags.roomsSeen = true;
-        if (e.target.closest('.food-item')) flags.foodChosen = true;
+        const t = e.target as Element | null;
+        if (t?.closest('.status-pill')) flags.statsSeen = true;
+        if (t?.closest('.dock-btn')) flags.roomsSeen = true;
+        if (t?.closest('.food-item')) flags.foodChosen = true;
     });
     if (safeGet(FLAG)) return;
     setTimeout(showAsk, 900);
 }
 
-export function askTutorial() {
+export function askTutorial(): void {
     showAsk();
 }
 
-function showAsk() {
+function showAsk(): void {
     const ask = document.getElementById('tutorial-ask');
     if (!ask) return;
     ask.classList.remove('hidden');
     requestAnimationFrame(() => ask.classList.add('show'));
 }
 
-function dismissAsk() {
+function dismissAsk(): void {
     const ask = document.getElementById('tutorial-ask');
     if (!ask) return;
     ask.classList.remove('show');
     ask.classList.add('hidden');
 }
 
-function markDone() {
+function markDone(): void {
     safeSet(FLAG, '1');
 }
 
-export function initTutorial() {
+export function initTutorial(): void {
     window.uiManager?.closeAllModals();
     dismissAsk();
-    overlayEl = document.getElementById('tutorial-overlay');
-    blockerEl = document.getElementById('tutorial-blocker');
-    spotEl = document.getElementById('tutorial-spot');
-    cardEl = document.getElementById('tutorial-card');
-    nextBtn = document.getElementById('tutorial-next');
-    skipBtn = document.getElementById('tutorial-skip');
+    overlayEl = document.getElementById('tutorial-overlay')!;
+    blockerEl = document.getElementById('tutorial-blocker')!;
+    spotEl = document.getElementById('tutorial-spot')!;
+    cardEl = document.getElementById('tutorial-card')!;
+    nextBtn = document.getElementById('tutorial-next') as HTMLButtonElement;
+    skipBtn = document.getElementById('tutorial-skip') as HTMLButtonElement;
     tutorialActive = true;
     stepIndex = 0;
     flags.statsSeen = false;
@@ -164,11 +179,11 @@ export function initTutorial() {
     pollTimer = setInterval(refreshStepState, 300);
 }
 
-function renderStep() {
+function renderStep(): void {
     const step = STEPS[stepIndex];
-    cardEl.querySelector('.tutorial-icon .material-symbols-rounded').textContent = step.icon;
-    document.getElementById('tutorial-title').textContent = step.title;
-    document.getElementById('tutorial-text').textContent = step.text;
+    cardEl.querySelector('.tutorial-icon .material-symbols-rounded')!.textContent = step.icon;
+    document.getElementById('tutorial-title')!.textContent = step.title;
+    document.getElementById('tutorial-text')!.textContent = step.text;
     nextBtn.textContent = step.last ? '¡Empezar!' : 'Continuar';
     const isTargetStep = !!(step.waitFor && step.target);
     cardEl.classList.toggle('compact', !isTargetStep);
@@ -182,7 +197,7 @@ function renderStep() {
     refreshStepState();
 }
 
-function updateLifted() {
+function updateLifted(): void {
     if (!cardEl) return;
     const modalOpen = !!document.querySelector('.modal:not(.hidden)');
     let lifted = modalOpen;
@@ -197,7 +212,7 @@ function updateLifted() {
     cardEl.classList.toggle('lifted', lifted);
 }
 
-function positionSpot() {
+function positionSpot(): void {
     updateBlocker();
     const step = STEPS[stepIndex];
     if (!step.target) {
@@ -210,7 +225,7 @@ function positionSpot() {
         return;
     }
     const r = el.getBoundingClientRect();
-    const cr = document.getElementById('app-container').getBoundingClientRect();
+    const cr = document.getElementById('app-container')!.getBoundingClientRect();
     const pad = 10;
     spotEl.style.left = (r.left - cr.left - pad) + 'px';
     spotEl.style.top = (r.top - cr.top - pad) + 'px';
@@ -219,7 +234,7 @@ function positionSpot() {
     spotEl.classList.remove('hidden');
 }
 
-function refreshStepState() {
+function refreshStepState(): void {
     if (!tutorialActive) return;
     updateLifted();
     updateBlocker();
@@ -234,7 +249,7 @@ function refreshStepState() {
     if (step.waitFor === 'slept' && GameState.isSleeping) flags.slept = true;
     const ready = !step.waitFor || flags[step.waitFor];
     nextBtn.disabled = !ready;
-    const hint = cardEl.querySelector('.tutorial-hint');
+    const hint = cardEl.querySelector('.tutorial-hint')!;
     if (step.waitFor) {
         hint.textContent = ready ? '¡Perfecto!' : 'Hazlo y te espero aquí';
         hint.classList.remove('hidden');
@@ -243,7 +258,7 @@ function refreshStepState() {
     }
 }
 
-function nextStep() {
+function nextStep(): void {
     window.uiManager?.closeAllModals();
     const step = STEPS[stepIndex];
     if (step.last) {
@@ -254,33 +269,33 @@ function nextStep() {
     renderStep();
 }
 
-function finishTutorial() {
+function finishTutorial(): void {
     tutorialActive = false;
-    clearInterval(pollTimer);
+    clearInterval(pollTimer as number);
     pollTimer = null;
     overlayEl.classList.add('hidden');
     blockerEl.classList.remove('on');
     markDone();
 }
 
-export function skipTutorial() {
+export function skipTutorial(): void {
     finishTutorial();
 }
 
-export function setupTutorialControls() {
-    document.getElementById('tutorial-yes').addEventListener('click', () => initTutorial());
-    document.getElementById('tutorial-no').addEventListener('click', () => {
+export function setupTutorialControls(): void {
+    document.getElementById('tutorial-yes')!.addEventListener('click', () => initTutorial());
+    document.getElementById('tutorial-no')!.addEventListener('click', () => {
         dismissAsk();
         markDone();
     });
-    document.getElementById('tutorial-next').addEventListener('click', () => {
+    document.getElementById('tutorial-next')!.addEventListener('click', () => {
         if (nextBtn && nextBtn.disabled) return;
         nextStep();
     });
-    document.getElementById('tutorial-skip').addEventListener('click', () => skipTutorial());
+    document.getElementById('tutorial-skip')!.addEventListener('click', () => skipTutorial());
 }
 
-export function startTutorialSystem() {
+export function startTutorialSystem(): void {
     setupTutorialControls();
     maybeStartTutorial();
 }

@@ -1,9 +1,19 @@
-export const FOOD_DATABASE = [
-    // ===== ESPECIALES =====
+export interface Food {
+    id: string;
+    cat: string;
+    name: string;
+    h: [number, number];
+    t: [number, number];
+    health?: [number, number];
+    healthChance?: number;
+    healthGain?: number;
+    type?: string;
+}
+
+export const FOOD_DATABASE: Food[] = [
     { id: 'agua', cat: 'bebidas', name: 'Agua', h: [0,0], t: [15,20], healthChance: 0.35, healthGain: 2 },
     { id: 'medicina', cat: 'especiales', name: 'Medicina', h: [0,0], t: [0,0], health: [50,50] },
 
-    // ===== FRUTAS Y VERDURAS =====
     { id: 'alcachofa', cat: 'verduras', name: 'Alcachofa', h: [8,14], t: [2,5], healthChance: 0.2, healthGain: 1 },
     { id: 'brocoli', cat: 'verduras', name: 'Brócoli', h: [8,14], t: [2,5], healthChance: 0.2, healthGain: 1 },
     { id: 'cerezas', cat: 'frutas', name: 'Cerezas', h: [8,13], t: [2,5], healthChance: 0.2, healthGain: 1 },
@@ -26,7 +36,6 @@ export const FOOD_DATABASE = [
     { id: 'sandia', cat: 'frutas', name: 'Sandía', h: [8,13], t: [2,5], healthChance: 0.2, healthGain: 1 },
     { id: 'zanahoria', cat: 'verduras', name: 'Zanahoria', h: [8,14], t: [2,5], healthChance: 0.2, healthGain: 1 },
 
-    // ===== BEBIDAS (no lácteas) =====
     { id: 'coca_cola', cat: 'bebidas', name: 'Refresco de Cola', h: [0,3], t: [8,14] },
     { id: 'jugo_de_frambuesa', cat: 'bebidas', name: 'Jugo de Frambuesa', h: [0,3], t: [10,18] },
     { id: 'jugo_de_fresa', cat: 'bebidas', name: 'Jugo de Fresa', h: [0,3], t: [10,18] },
@@ -37,12 +46,10 @@ export const FOOD_DATABASE = [
     { id: 'refresco', cat: 'bebidas', name: 'Refresco', h: [0,3], t: [8,14] },
     { id: 'te_helado', cat: 'bebidas', name: 'Té Helado', h: [0,3], t: [10,16] },
 
-    // ===== LÁCTEOS Y MALTEADAS =====
     { id: 'leche', cat: 'lacteos', name: 'Leche', h: [5,10], t: [8,12] },
     { id: 'leche_de_chocolate', cat: 'lacteos', name: 'Leche de Chocolate', h: [8,13], t: [8,12] },
     { id: 'malteada_de_chocolate', cat: 'lacteos', name: 'Malteada de Chocolate', h: [12,18], t: [8,12] },
 
-    // ===== PANES, PASTELES Y DULCES =====
     { id: 'barra_de_chocolate', cat: 'dulces', name: 'Barra de Chocolate', h: [12,18], t: [-2,1] },
     { id: 'baston_de_dulce', cat: 'dulces', name: 'Bastón de Caramelo', h: [9,14], t: [-1,2] },
     { id: 'bolas_de_chocolate', cat: 'dulces', name: 'Bolas de Chocolate', h: [12,17], t: [-2,1] },
@@ -74,13 +81,11 @@ export const FOOD_DATABASE = [
     { id: 'pretzel', cat: 'postres', name: 'Pretzel', h: [12,17], t: [-2,1] },
     { id: 'waffles', cat: 'postres', name: 'Waffles', h: [14,20], t: [-2,1] },
 
-    // ===== PANES CON CREMAS / MERMELADAS =====
     { id: 'pan_con_crema_de_cacahuate', cat: 'panes', name: 'Pan con Crema de Cacahuate', h: [16,24], t: [-3,0] },
     { id: 'pan_con_crema_de_chocolate', cat: 'panes', name: 'Pan con Crema de Chocolate', h: [16,24], t: [-3,0] },
     { id: 'pan_con_mermelada_de_durazno', cat: 'panes', name: 'Pan con Mermelada de Durazno', h: [16,24], t: [-3,0] },
     { id: 'pan_con_mermelada_de_fresa', cat: 'panes', name: 'Pan con Mermelada de Fresa', h: [16,24], t: [-3,0] },
 
-    // ===== COMIDAS RÁPIDAS Y PLATOS FUERTES =====
     { id: 'aros_de_cebolla', cat: 'snacks', name: 'Aros de Cebolla', h: [13,19], t: [-3,-1] },
     { id: 'almejas', cat: 'mariscos', name: 'Almejas', h: [13,19], t: [-1,2] },
     { id: 'calamar', cat: 'mariscos', name: 'Calamar', h: [13,19], t: [-1,2] },
@@ -101,14 +106,12 @@ export const FOOD_DATABASE = [
     { id: 'sardina', cat: 'mariscos', name: 'Sardina', h: [13,19], t: [-1,2] },
     { id: 'tocino', cat: 'rapidas', name: 'Tocino', h: [16,23], t: [-4,-1] },
 
-    // ===== SOPAS =====
     { id: 'sopa_de_calabaza', cat: 'sopas', name: 'Sopa de Calabaza', h: [12,18], t: [6,10] },
     { id: 'sopa_de_pollo', cat: 'sopas', name: 'Sopa de Pollo', h: [12,18], t: [6,10] },
     { id: 'sopa_de_ramen', cat: 'sopas', name: 'Sopa de Ramen', h: [14,20], t: [6,10] },
     { id: 'sopa_de_verduras', cat: 'sopas', name: 'Sopa de Verduras', h: [12,18], t: [6,10] },
     { id: 'sopa_de_wonton', cat: 'sopas', name: 'Sopa de Wonton', h: [12,18], t: [6,10] },
 
-    // ===== SUSHI Y MAKIS =====
     { id: 'maki_de_aguacate', cat: 'sushi', name: 'Maki de Aguacate', h: [13,19], t: [-1,2] },
     { id: 'maki_de_atun', cat: 'sushi', name: 'Maki de Atún', h: [13,19], t: [-1,2] },
     { id: 'maki_de_salmon', cat: 'sushi', name: 'Maki de Salmón', h: [13,19], t: [-1,2] },
@@ -120,13 +123,11 @@ export const FOOD_DATABASE = [
     { id: 'temaki_de_anguila', cat: 'sushi', name: 'Temaki de Anguila', h: [13,19], t: [-1,2] },
     { id: 'temaki_de_salmon', cat: 'sushi', name: 'Temaki de Salmón', h: [13,19], t: [-1,2] },
 
-    // ===== HELADOS (tipo icecream) =====
     { id: 'helado_de_chocolate', cat: 'helados', name: 'Helado de Chocolate', h: [10,16], t: [6,10], type: 'icecream' },
     { id: 'helado_de_fresa', cat: 'helados', name: 'Helado de Fresa', h: [10,16], t: [6,10], type: 'icecream' },
     { id: 'helado_de_todo', cat: 'helados', name: 'Helado Surtido', h: [10,16], t: [6,10], type: 'icecream' },
     { id: 'helado_de_vainilla', cat: 'helados', name: 'Helado de Vainilla', h: [10,16], t: [6,10], type: 'icecream' },
 
-    // ===== PLATILLOS MEXICANOS =====
     { id: 'enchiladas', cat: 'mexicana', name: 'Enchiladas', h: [16,24], t: [-6,-3] },
     { id: 'enmoladas', cat: 'mexicana', name: 'Enmoladas', h: [18,26], t: [-8,-4], health: [-2,-1] },
     { id: 'pozole', cat: 'mexicana', name: 'Pozole', h: [22,32], t: [-10,-6], health: [-2,-1] },
@@ -150,9 +151,15 @@ export const ANY_FRAMES = {
     ENFERMA_2: 6,
     MOLESTA: 7,
     TIRED: 8
-};
+} as const;
 
-export const CATEGORIES = [
+export interface Category {
+    id: string;
+    icon: string;
+    name: string;
+}
+
+export const CATEGORIES: Category[] = [
     { id: 'especiales', icon: 'medical_services', name: 'Especiales' },
     { id: 'frutas', icon: 'nutrition', name: 'Frutas' },
     { id: 'verduras', icon: 'eco', name: 'Verduras' },

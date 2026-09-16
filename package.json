@@ -1,7 +1,7 @@
 {
   "name": "cuida-a-any",
   "version": "1.0.0",
-  "description": "Mascota virtual PWA: Cuida a Any (Phaser 3 + JavaScript vanilla).",
+  "description": "Mascota virtual PWA: Cuida a Any (Phaser 3 + TypeScript).",
   "license": "MIT",
   "author": "Kael",
   "main": "sw.js",
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "playwright-core": "^1.62.1",
+    "typescript": "^7.0.2",
     "vite": "^8.2.1"
   }
 }
