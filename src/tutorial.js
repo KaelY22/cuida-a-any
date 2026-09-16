@@ -65,6 +65,7 @@ const flags = {};
 
 window.tutorialDragOK = () => !(tutorialActive && STEPS[stepIndex] && STEPS[stepIndex].id !== 'feed');
 
+let lastClipPath = '';
 function updateBlocker() {
     if (!blockerEl || !tutorialActive) return;
     const cr = document.getElementById('app-container').getBoundingClientRect();
@@ -90,11 +91,14 @@ function updateBlocker() {
             }
         }
     }
-    if (!hole) {
-        blockerEl.style.clipPath = '';
-        return;
+    let clip = '';
+    if (hole) {
+        clip = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${hole.x1}px ${hole.y1}px, ${hole.x2}px ${hole.y1}px, ${hole.x2}px ${hole.y2}px, ${hole.x1}px ${hole.y2}px, ${hole.x1}px ${hole.y1}px)`;
     }
-    blockerEl.style.clipPath = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${hole.x1}px ${hole.y1}px, ${hole.x2}px ${hole.y1}px, ${hole.x2}px ${hole.y2}px, ${hole.x1}px ${hole.y2}px, ${hole.x1}px ${hole.y1}px)`;
+    if (clip !== lastClipPath) {
+        lastClipPath = clip;
+        blockerEl.style.clipPath = clip;
+    }
 }
 
 function safeGet(key) {
@@ -226,7 +230,7 @@ function refreshStepState() {
             if (!GameState.isEating) window.switchToScene(step.goTo);
         }
     }
-    if (step.waitFor === 'fed' && GameState.isEating) flags.fed = true;
+    if (step.waitFor === 'fed' && (GameState.isEating || window.__feedAttempted)) flags.fed = true;
     if (step.waitFor === 'slept' && GameState.isSleeping) flags.slept = true;
     const ready = !step.waitFor || flags[step.waitFor];
     nextBtn.disabled = !ready;

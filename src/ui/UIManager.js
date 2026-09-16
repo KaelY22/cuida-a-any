@@ -300,7 +300,7 @@ export class UIManager {
             item.type = 'button';
             item.className = 'outfit-item' + (outfit.id === GameState.outfit ? ' active' : '');
             item.innerHTML = `
-                <div class="outfit-thumb" style="background-image:url('assets/any_sprites/${outfit.id}.png');background-size:400% 300%;background-position:0 0"></div>
+                <div class="outfit-thumb" style="background-image:url('assets/any_sprites/${outfit.id}.webp');background-size:400% 300%;background-position:0 0"></div>
                 <span class="outfit-name">${outfit.name}</span>
                 <span class="outfit-check"><span class="material-symbols-rounded">check</span></span>`;
             item.addEventListener('click', () => {
@@ -357,6 +357,8 @@ export class UIManager {
                 const img = document.createElement('img');
                 img.src = `assets/comida/${food.id}.webp`;
                 img.alt = food.name;
+                img.loading = 'lazy';
+                img.decoding = 'async';
                 const label = document.createElement('span');
                 label.textContent = food.name;
                 item.appendChild(img);

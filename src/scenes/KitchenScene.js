@@ -88,10 +88,11 @@ export class KitchenScene extends Phaser.Scene {
 
         // Cuando empieza el arrastre
         this.food.on('dragstart', (pointer, dragX, dragY) => {
-            if (GameState.isEating || GameState.isSleeping || !window.tutorialDragOK?.()) {
+            if (GameState.isEating || GameState.isSleeping || !(window.tutorialDragOK?.() ?? true)) {
                 return;
             }
             this.isDragging = true;
+            window.isDraggingFood = true;
             this.food.setDepth(10);
             this.food.setScale(LAYOUT.foodH / 200 * 1.2);
             // Cambiar cursor
@@ -120,6 +121,7 @@ export class KitchenScene extends Phaser.Scene {
                 return;
             }
             this.isDragging = false;
+            window.isDraggingFood = false;
             const wasNearMouth = this.nearMouth;
             this.nearMouth = false;
             this.food.setDepth(1);
@@ -127,6 +129,7 @@ export class KitchenScene extends Phaser.Scene {
             this.food.input.cursor = 'grab';
 
             if (wasNearMouth && this.any && !GameState.isSleeping) {
+                window.__feedAttempted = true;
                 this.startEating(this.food);
                 return;
             }
@@ -162,6 +165,7 @@ export class KitchenScene extends Phaser.Scene {
 
     updateAnyFrameFromState() {
         if (!this.any) return;
+        resetFrameCache();
         let targetFrame = ANY_FRAMES.NORMAL;
         if (GameState.health < 15) targetFrame = ANY_FRAMES.ENFERMA_2;
         else if (GameState.health < 30) targetFrame = ANY_FRAMES.ENFERMA_1;

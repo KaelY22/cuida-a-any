@@ -1,4 +1,4 @@
-const VERSION = 'any-v26';
+const VERSION = 'any-v27';
 
 const CORE = [
     __PRECACHE_LIST__

@@ -94,14 +94,21 @@ export function resetGameState() {
 export function loadData() {
     const saved = safeGet('any_game_data');
     if (saved) {
-        const parsed = JSON.parse(saved);
+        let parsed;
+        try {
+            parsed = JSON.parse(saved);
+        } catch (e) {
+            resetGameState();
+            updateUIBars();
+            return;
+        }
         const now = Date.now();
         const elapsed = (now - (parsed.lastSavedTime || now)) / 1000;
 
-        GameState.hunger = Math.max(0, parsed.hunger ?? 26);
-        GameState.thirst = Math.max(0, parsed.thirst ?? 26);
-        GameState.sleep = Math.max(0, parsed.sleep ?? 76);
-        GameState.health = Math.max(0, parsed.health ?? 90);
+        GameState.hunger = Number.isFinite(parsed.hunger) ? Math.max(0, parsed.hunger) : 26;
+        GameState.thirst = Number.isFinite(parsed.thirst) ? Math.max(0, parsed.thirst) : 26;
+        GameState.sleep = Number.isFinite(parsed.sleep) ? Math.max(0, parsed.sleep) : 76;
+        GameState.health = Number.isFinite(parsed.health) ? Math.max(0, parsed.health) : 90;
         GameState.currentScene = parsed.currentScene || 'MainScene';
         GameState.isSleeping = parsed.isSleeping ?? false;
         currentFoodIndex = (parsed.currentFoodIndex ?? 0) % FOOD_DATABASE.length;

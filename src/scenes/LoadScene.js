@@ -26,9 +26,9 @@ export class LoadScene extends Phaser.Scene {
             import('../tutorial.js').then(({ startTutorialSystem }) => startTutorialSystem()).catch(() => {});
         });
 
-        this.load.spritesheet('any_base', 'assets/any_sprites/any_base.png', { frameWidth: 450, frameHeight: 450 });
-        this.load.spritesheet('any_casual', 'assets/any_sprites/any_casual.png', { frameWidth: 450, frameHeight: 450 });
-        this.load.image('any_durmiendo', 'assets/any_sprites/any_durmiendo.png');
+        this.load.spritesheet('any_base', 'assets/any_sprites/any_base.webp', { frameWidth: 450, frameHeight: 450 });
+        this.load.spritesheet('any_casual', 'assets/any_sprites/any_casual.webp', { frameWidth: 450, frameHeight: 450 });
+        this.load.image('any_durmiendo', 'assets/any_sprites/any_durmiendo.webp');
 
         const opts = { width: 2560, height: 1440 };
         this.load.svg('bg_dia', 'assets/backgrounds/bg_dia.svg', opts);
@@ -40,9 +40,9 @@ export class LoadScene extends Phaser.Scene {
 
         FOOD_DATABASE.forEach((food) => this.load.image(food.id, `assets/comida/${food.id}.webp`));
 
-        this.load.image('ui_fridge', 'assets/ui/fridge.png');
-        this.load.image('ui_light_on', 'assets/ui/light_on.png');
-        this.load.image('ui_light_off', 'assets/ui/light_off.png');
+        this.load.image('ui_fridge', 'assets/ui/fridge.webp');
+        this.load.image('ui_light_on', 'assets/ui/light_on.webp');
+        this.load.image('ui_light_off', 'assets/ui/light_off.webp');
         this.load.audio('achievement_unlock', 'assets/ui/achievement-unlock.mp3');
     }
 

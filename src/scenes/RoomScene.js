@@ -89,7 +89,7 @@ export class RoomScene extends Phaser.Scene {
         updateAnyExpression(this);
         throttledSave();
         updateUIBars();
-        bumpCounter('sleepCount');
+        if (GameState.isSleeping) bumpCounter('sleepCount');
 
         this.time.delayedCall(300, () => {
             this.isToggling = false;
