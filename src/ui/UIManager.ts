@@ -354,7 +354,7 @@ export class UIManager {
             item.type = 'button';
             item.className = 'outfit-item' + (outfit.id === GameState.outfit ? ' active' : '');
             item.innerHTML = `
-                <div class="outfit-thumb" style="background-image:url('assets/any_sprites/${outfit.id}.webp');background-size:400% 300%;background-position:0 0"></div>
+                <img class="outfit-thumb" src="assets/any_sprites/thumb-${outfit.id}.webp" alt="${outfit.name}">
                 <span class="outfit-name">${outfit.name}</span>
                 <span class="outfit-check"><span class="material-symbols-rounded">check</span></span>`;
             item.addEventListener('click', () => {

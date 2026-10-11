@@ -67,7 +67,15 @@ server.listen(8127, async () => {
     }));
 
     report.errors = errors;
+    const ok = errors.length === 0
+        && report.topbar.hasSettingsBtn === true && report.topbar.pillCount === 4
+        && report.dockInit.count === 3 && report.dockInit.dockVisible === true
+        && report.dockInit.actives[0] === true && report.dockCentered === true
+        && report.activeIsHabitacion === 'Habitación'
+        && report.afterSwitch.scene === 'KitchenScene' && report.afterSwitch.activeLabel === 'Cocina';
     console.log('SMOKE MENU:', JSON.stringify(report, null, 1));
-    browser.close();
-    process.exit(0);
+    console.log(ok ? 'MENU TEST: PASS' : 'MENU TEST: FAIL');
+    await browser.close();
+    server.close();
+    process.exit(ok ? 0 : 1);
 });

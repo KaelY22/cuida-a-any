@@ -19,7 +19,7 @@ function walk(dir) {
 const ESSENTIAL = [
     /index\.html$/,
     /manifest.*\.json$/,
-    /assets\/(index|phaser)[\w.-]*\.js$/,
+    /assets\/[^/]*\.js$/,
     /assets\/[^/]*\.css$/,
     /_redirects/,
     /icons?\//,

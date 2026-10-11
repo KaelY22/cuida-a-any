@@ -291,7 +291,15 @@ server.listen(8125, async () => {
     }));
 
     report.errors = errors;
+    const ok = errors.length === 0
+        && report.askAppears === true && report.noHidesAsk === true
+        && report.askDoesNotReappear === true && report.askReappearsAfterClear === true
+        && report.tutorialEnd.overlayHidden === true && report.tutorialEnd.flag === '1'
+        && report.achModal.open === true && report.achModal.rows === 12
+        && report.achPersist.count === report.achModal.count;
     console.log('SMOKE FEATURES:', JSON.stringify(report, null, 1));
-    browser.close();
-    process.exit(0);
+    console.log(ok ? 'FEATURES TEST: PASS' : 'FEATURES TEST: FAIL');
+    await browser.close();
+    server.close();
+    process.exit(ok ? 0 : 1);
 });
